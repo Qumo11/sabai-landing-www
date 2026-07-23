@@ -166,21 +166,34 @@ img{max-width:100%;display:block}
   background-size:240px 240px;
 }
 .hero::after{
-  content:'';position:absolute;left:0;right:0;bottom:-1px;height:300px;
+  content:'';position:absolute;left:0;right:0;bottom:-1px;height:340px;
   pointer-events:none;
-  /* Łagodna, równomierna krzywa — bez "brudnej" smugi w środku.
-     KLUCZOWE: krem staje się PEŁNY (nieprzezroczysty) już przy 90%, a ostatni
-     kawałek jest jednolicie kremowy — dokładnie taki jak sekcja poniżej.
-     Dzięki temu na styku nie ma żadnej widocznej linii ani "schodka". */
+  /* Gładka krzywa "smoothstep" — nachylenie zmienia się płynnie, więc nie ma
+     załamań, na których pokazywały się ciche poziome linie (banding).
+     Krem staje się PEŁNY już przy 88% i dalej jest jednolity — jak sekcja
+     poniżej — dlatego na samym styku nie ma żadnej widocznej linii. */
   background:linear-gradient(to bottom,
-    rgba(250,246,240,0)   0%,
-    rgba(250,246,240,.03) 20%,
-    rgba(250,246,240,.10) 38%,
-    rgba(250,246,240,.24) 54%,
-    rgba(250,246,240,.45) 68%,
-    rgba(250,246,240,.70) 80%,
-    var(--cream)          90%,
+    rgba(250,246,240,0)    0%,
+    rgba(250,246,240,.007) 8%,
+    rgba(250,246,240,.045) 16%,
+    rgba(250,246,240,.129) 24%,
+    rgba(250,246,240,.257) 32%,
+    rgba(250,246,240,.415) 40%,
+    rgba(250,246,240,.585) 48%,
+    rgba(250,246,240,.743) 56%,
+    rgba(250,246,240,.871) 64%,
+    rgba(250,246,240,.955) 72%,
+    rgba(250,246,240,.993) 80%,
+    var(--cream)           88%,
     var(--cream)          100%);
+}
+/* Mikro-ziarno tylko na strefie przejścia — rozbija schodkowanie gradientu
+   (banding) tak, że oko widzi gładź. Ledwo widoczne (5%). */
+.hero-grain{
+  position:absolute;left:0;right:0;bottom:0;height:400px;z-index:1;
+  pointer-events:none;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:180px 180px;
 }
 .hero-inner{position:relative;z-index:2;text-align:center;color:#fff;width:100%}
 .eyebrow{
@@ -443,6 +456,7 @@ footer a:hover{text-decoration:underline}
 
 <!-- ================= HERO ================= -->
 <header class="hero">
+  <div class="hero-grain" aria-hidden="true"></div>
   <div class="wrap hero-inner">
     <div class="brand">Sabai</div>
     <div class="eyebrow">Wkrótce w Jarosławiu</div>
