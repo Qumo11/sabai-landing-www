@@ -129,8 +129,8 @@ addEventListener('click', e => {
   --jade:#2C4A3B;       /* ZIELEŃ — nietknięta */
   --jade-light:#3D6350; /* ZIELEŃ — nietknięta */
   --terracotta:#9A7856; /* akcent etykiet — ciepły bronz zamiast czerwieni */
-  --gold:#B08D57;       /* złoto — nietknięte */
-  --gold-light:#D4B483; /* złoto jasne — nietknięte */
+  --gold:#A2865F;       /* dawne złoto → jasny brąz (café au lait) */
+  --gold-light:#D3C2A6; /* dawne złoto jasne → ciepły beż/piasek */
   --line:rgba(44,34,28,.14);
   --shadow:0 4px 24px rgba(44,34,28,.08);
   --shadow-lg:0 12px 48px rgba(44,34,28,.14);
@@ -196,7 +196,7 @@ img{max-width:100%;display:block}
   position:absolute;z-index:3;top:26px;right:28px;
   width:98px;height:98px;border-radius:50%;
   background:radial-gradient(circle at 38% 30%,var(--gold-light),var(--gold) 78%);
-  box-shadow:0 10px 28px rgba(176,141,87,.42), inset 0 0 0 1px rgba(255,255,255,.28);
+  box-shadow:0 10px 28px rgba(122,96,66,.4), inset 0 0 0 1px rgba(255,255,255,.28);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   color:#2A2410;transform:rotate(7deg);
 }
@@ -262,9 +262,9 @@ h1 em{display:block;font-style:italic;color:var(--gold-light)}
 }
 .btn-gold{
   background:linear-gradient(135deg,var(--gold-light),var(--gold));
-  color:#241F1A;box-shadow:0 6px 22px rgba(176,141,87,.4);
+  color:#241F1A;box-shadow:0 6px 22px rgba(122,96,66,.34);
 }
-.btn-gold:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(176,141,87,.5)}
+.btn-gold:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(122,96,66,.44)}
 .btn-gold:active{transform:translateY(0)}
 .btn-full{display:block;width:100%;text-align:center;padding:21px}
 
@@ -358,7 +358,7 @@ h2{font-size:clamp(30px,6vw,44px);margin-bottom:16px}
 .form-sec .sec-head p{color:rgba(255,255,255,.75)}
 .form-card{
   background:rgba(255,255,255,.05);
-  border:1px solid rgba(212,180,131,.28);
+  border:1px solid rgba(211,194,166,.32);
   border-radius:3px;padding:40px 30px;
   backdrop-filter:blur(6px);
 }
@@ -370,7 +370,7 @@ input[type=text],input[type=tel],input[type=email]{
   background:#fff;border:1px solid transparent;border-radius:2px;
   color:var(--ink);transition:border-color .15s ease, box-shadow .15s ease;
 }
-input:focus{outline:none;border-color:var(--gold-light);box-shadow:0 0 0 3px rgba(212,180,131,.28)}
+input:focus{outline:none;border-color:var(--gold-light);box-shadow:0 0 0 3px rgba(211,194,166,.32)}
 input.err{border-color:#E8836F;box-shadow:0 0 0 3px rgba(232,131,111,.25)}
 .opt{font-size:11px;letter-spacing:.06em;color:rgba(255,255,255,.45);text-transform:none}
 .consent{display:flex;gap:13px;align-items:flex-start;margin:26px 0 24px}
