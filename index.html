@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sabai — Autentyczny masaż tajski wkrótce w Jarosławiu</title>
+<meta name="description" content="Prawdziwe terapeutki z Tajlandii. Zapisz się na listę otwarcia i odbierz voucher -30% na pierwszą wizytę.">
+<meta name="robots" content="index, follow">
+
+<meta property="og:title" content="Autentyczny masaż tajski wkrótce w Jarosławiu">
+<meta property="og:description" content="Prawdziwe terapeutki z Tajlandii. Zapisz się na listę otwarcia i odbierz -30% na pierwszą wizytę.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pl_PL">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+
+<!-- ============================================================
+     META PIXEL — WKLEJ TU SWOJE ID Z MENEDŻERA REKLAM
+     Zamień PIXEL_ID_TUTAJ na numer (np. 1234567890).
+     Bez tego NIE ZMIERZYSZ testu — to najważniejsza linijka na stronie.
+     ============================================================ -->
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+document,'script','https://connect.facebook.net/en_US/fbevents.js');
+var PIXEL_ID = 'PIXEL_ID_TUTAJ';
+if (PIXEL_ID !== 'PIXEL_ID_' + 'TUTAJ') { fbq('init', PIXEL_ID); fbq('track', 'PageView'); }
+</script>
+
+<!-- ============================================================
+     SUPABASE — BAZA I WŁASNA ANALITYKA (zasila panel admin.html)
+     Wklej dwie rzeczy z Supabase -> Project Settings -> Data API / API Keys.
+     Dopóki tu jest TUTAJ_WKLEJ_..., strona działa w trybie DEMO:
+     nic nie zapisuje, ale też nic nie psuje.
+
+     Ten klucz JEST publiczny i to jest OK — sam z siebie nic nie otwiera.
+     Danych pilnują reguły RLS w bazie (supabase-setup.sql).
+     NIGDY nie wklejaj tu klucza "service_role" — ten omija wszystkie reguły.
+     ============================================================ -->
+<script type="module">
+const SUPABASE_URL      = 'TUTAJ_WKLEJ_URL';        // np. https://abcdefgh.supabase.co
+const SUPABASE_ANON_KEY = 'TUTAJ_WKLEJ_ANON_KEY';   // długi ciąg od eyJ...
+
+const ON = !SUPABASE_URL.startsWith('TUTAJ') && !SUPABASE_ANON_KEY.startsWith('TUTAJ');
+
+let sb = null;
+if (ON) {
+  const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+  sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+
+/* Losowy identyfikator wizyty. Świadomie NIE zbieramy IP ani niczego, po czym
+   dałoby się kogoś rozpoznać — to zwykły losowy ciąg, który ginie po zamknięciu
+   karty. Wystarczy, żeby odróżnić "10 wejść jednej osoby" od "10 różnych osób",
+   a nie robi z nas firmy śledzącej ludzi po internecie. */
+function sessionId(){
+  let s = sessionStorage.getItem('sabai_sid');
+  if (!s) {
+    s = (crypto.randomUUID?.() || String(Math.random()).slice(2) + Date.now());
+    sessionStorage.setItem('sabai_sid', s);
+  }
+  return s;
+}
+
+const params = new URLSearchParams(location.search);
+const meta = () => ({
+  session_id:   sessionId(),
+  device:       matchMedia('(max-width:720px)').matches ? 'mobile' : 'desktop',
+  referrer:     document.referrer ? new URL(document.referrer).hostname : null,
+  utm_source:   params.get('utm_source'),
+  utm_campaign: params.get('utm_campaign')
+});
+
+/* Jedno zdarzenie leci w DWA miejsca naraz: do Twojej bazy (widzisz je w panelu
+   od razu) i do Piksela Meta (widzisz je w Menedżerze zdarzeń, gdy już go
+   podepniesz). Meta jest dodatkiem, nie warunkiem — panel działa bez niej. */
+window.sabaiTrack = async function(name, fbEvent){
+  if (fbEvent && typeof fbq === 'function') fbq('track', fbEvent);
+  if (!sb) { console.log('[DEMO] zdarzenie:', name); return; }
+  try {
+    await sb.from('events').insert({ name, ...meta() });
+  } catch (e) {
+    /* Analityka NIGDY nie może wywrócić strony. Jak nie zapisze — trudno. */
+    console.warn('track failed', e);
+  }
+};
+
+window.sabaiSaveLead = async function(data){
+  if (!sb) { console.log('[DEMO] Zgłoszenie NIE zostało zapisane:', data); return; }
+  const { error } = await sb.from('leads').insert({ ...data, ...pick(meta()) });
+  if (error) throw error;
+};
+const pick = m => ({ session_id:m.session_id, utm_source:m.utm_source, utm_campaign:m.utm_campaign });
+
+/* Prawdziwa liczba zapisanych — zasila licznik w hero.
+   Ta funkcja w bazie oddaje TYLKO liczbę, nigdy żadnych danych osobowych. */
+window.sabaiLeadCount = async function(){
+  if (!sb) return 0;
+  const { data, error } = await sb.rpc('public_lead_count');
+  return error ? 0 : data;
+};
+
+window.SABAI_ON = ON;
+
+/* Wejście na stronę */
+sabaiTrack('page_view');
+
+/* Kliknięcia w przyciski — wystarczy dopisać data-track="nazwa" do elementu */
+addEventListener('click', e => {
+  const el = e.target.closest('[data-track]');
+  if (el) sabaiTrack(el.dataset.track);
+}, { passive:true });
+</script>
+
+<style>
+:root{
+  --cream:#FAF6F0;
+  --cream-2:#F2EBE1;
+  --ink:#2A2622;
+  --muted:#6E665C;
+  --jade:#2C4A3B;
+  --jade-light:#3D6350;
+  --terracotta:#B5654A;
+  --gold:#B08D57;
+  --gold-light:#D4B483;
+  --line:rgba(42,38,34,.14);
+  --shadow:0 4px 24px rgba(42,38,34,.08);
+  --shadow-lg:0 12px 48px rgba(42,38,34,.14);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  font-family:'Jost',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  font-weight:300;
+  color:var(--ink);
+  background:var(--cream);
+  line-height:1.65;
+  font-size:17px;
+  overflow-x:hidden;
+}
+h1,h2,h3{font-family:'Cormorant Garamond',Georgia,serif;font-weight:500;line-height:1.15;letter-spacing:.01em}
+img{max-width:100%;display:block}
+.wrap{width:100%;max-width:1080px;margin:0 auto;padding:0 22px}
+.narrow{max-width:640px}
+
+/* ---------- HERO ---------- */
+.hero{
+  position:relative;
+  min-height:100svh;
+  display:flex;align-items:center;
+  padding:80px 0 56px;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(61,99,80,.55) 0%, rgba(44,74,59,.88) 55%, rgba(28,48,38,.96) 100%),
+    linear-gradient(160deg,#3D6350 0%,#2C4A3B 45%,#1E3529 100%);
+  overflow:hidden;
+}
+/* Delikatny botaniczny wzór zamiast zdjęcia — patrz instrukcja w CZYTAJ-TO-NAJPIERW.txt */
+.hero::before{
+  content:'';position:absolute;inset:0;opacity:.13;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'%3E%3Cg fill='none' stroke='%23D4B483' stroke-width='1.1' opacity='.9'%3E%3Cpath d='M120 30c-18 26-18 52 0 78 18-26 18-52 0-78z'/%3E%3Cpath d='M120 108v104'/%3E%3Cpath d='M120 140c-22-6-38-22-44-44 22 6 38 22 44 44z'/%3E%3Cpath d='M120 140c22-6 38-22 44-44-22 6-38 22-44 44z'/%3E%3Cpath d='M120 186c-18-5-31-18-36-36 18 5 31 18 36 36z'/%3E%3Cpath d='M120 186c18-5 31-18 36-36-18 5-31 18-36 36z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size:240px 240px;
+}
+.hero::after{
+  content:'';position:absolute;left:0;right:0;bottom:0;height:120px;
+  background:linear-gradient(to bottom,rgba(250,246,240,0),var(--cream));
+}
+.hero-inner{position:relative;z-index:2;text-align:center;color:#fff;width:100%}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:10px;
+  font-size:12px;letter-spacing:.28em;text-transform:uppercase;font-weight:400;
+  color:var(--gold-light);margin-bottom:26px;
+}
+.eyebrow::before,.eyebrow::after{content:'';width:28px;height:1px;background:var(--gold-light);opacity:.6}
+.brand{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(30px,7vw,42px);letter-spacing:.34em;
+  text-transform:uppercase;color:#fff;font-weight:400;
+  margin-bottom:34px;text-indent:.34em;
+}
+h1{font-size:clamp(38px,8.4vw,68px);color:#fff;margin-bottom:22px;font-weight:400}
+h1 em{font-style:normal;color:var(--gold-light)}
+.hero-sub{
+  font-size:clamp(16px,4vw,19px);color:rgba(255,255,255,.9);
+  max-width:520px;margin:0 auto 38px;font-weight:300;
+}
+.scarcity{
+  margin-top:24px;font-size:13.5px;color:rgba(255,255,255,.72);
+  display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;
+}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--gold-light);box-shadow:0 0 0 0 rgba(212,180,131,.7);animation:pulse 2.4s infinite}
+.counter{margin-top:14px;font-size:14px;color:rgba(255,255,255,.82)}
+.counter strong{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--gold-light);font-weight:500}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(212,180,131,.6)}70%{box-shadow:0 0 0 10px rgba(212,180,131,0)}100%{box-shadow:0 0 0 0 rgba(212,180,131,0)}}
+
+/* ---------- PRZYCISKI ---------- */
+.btn{
+  display:inline-block;border:none;cursor:pointer;font-family:inherit;
+  font-size:16px;font-weight:400;letter-spacing:.06em;
+  padding:19px 40px;border-radius:2px;text-decoration:none;
+  transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.btn-gold{
+  background:linear-gradient(135deg,var(--gold-light),var(--gold));
+  color:#241F1A;box-shadow:0 6px 22px rgba(176,141,87,.4);
+}
+.btn-gold:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(176,141,87,.5)}
+.btn-gold:active{transform:translateY(0)}
+.btn-full{display:block;width:100%;text-align:center;padding:21px}
+
+/* ---------- SEKCJE ---------- */
+section{padding:88px 0}
+.sec-head{text-align:center;max-width:600px;margin:0 auto 56px}
+.sec-label{
+  font-size:11.5px;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--terracotta);margin-bottom:14px;font-weight:400;
+}
+h2{font-size:clamp(30px,6vw,44px);margin-bottom:16px}
+.sec-head p{color:var(--muted);font-size:16.5px}
+
+/* ---------- KAFELKI ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:22px}
+.card{
+  background:#fff;border:1px solid var(--line);border-radius:3px;
+  padding:38px 30px;text-align:center;
+  transition:transform .2s ease,box-shadow .2s ease;
+}
+.card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+.card .ico{
+  width:52px;height:52px;margin:0 auto 20px;color:var(--jade);
+}
+.card .ico svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:1.3}
+.card h3{font-size:23px;margin-bottom:10px;color:var(--jade)}
+.card p{font-size:15px;color:var(--muted);line-height:1.6}
+
+/* ---------- NASTRÓJ / ZDJĘCIA ---------- */
+.mood{padding-top:0}
+.mood-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;height:420px}
+.mood-col{display:grid;gap:14px}
+.ph{
+  position:relative;border-radius:3px;overflow:hidden;background:var(--jade);
+  background-size:cover;background-position:center;
+}
+/* Fallback, gdy nie ma jeszcze zdjęcia — subtelny wzór zamiast pustej dziury */
+.ph::before{
+  content:'';position:absolute;inset:0;opacity:.35;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg fill='none' stroke='%23D4B483' stroke-width='.9'%3E%3Cpath d='M60 18c-9 13-9 26 0 39 9-13 9-26 0-39z'/%3E%3Cpath d='M60 57v45'/%3E%3C/g%3E%3C/svg%3E");
+  background-size:120px 120px;
+}
+.ph.has-photo::before{display:none}
+.ph span{
+  position:absolute;left:0;right:0;bottom:0;padding:22px 20px 18px;
+  font-family:'Cormorant Garamond',serif;font-size:21px;color:#fff;z-index:2;
+  background:linear-gradient(to top,rgba(20,35,27,.85),transparent);
+}
+.ph-note{
+  text-align:center;font-size:12.5px;color:var(--muted);
+  margin-top:16px;font-style:italic;
+}
+@media(max-width:720px){
+  .mood-grid{grid-template-columns:1fr;height:auto}
+  .ph{height:220px}
+  .mood-col{gap:14px}
+}
+
+/* ---------- OFERTA ---------- */
+.offer{background:var(--cream-2)}
+.offer-box{
+  background:#fff;border:1px solid var(--line);border-top:3px solid var(--gold);
+  border-radius:3px;padding:48px 34px;box-shadow:var(--shadow);
+}
+.perks{list-style:none;display:grid;gap:22px;margin:0 auto;max-width:460px}
+.perks li{display:flex;gap:16px;align-items:flex-start;text-align:left}
+.perks .num{
+  flex:0 0 34px;height:34px;border-radius:50%;
+  background:var(--jade);color:var(--gold-light);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-family:'Cormorant Garamond',serif;
+}
+.perks strong{display:block;font-weight:400;color:var(--ink);font-size:17px}
+.perks span.d{font-size:14.5px;color:var(--muted)}
+
+/* ---------- FORMULARZ ---------- */
+.form-sec{
+  background:linear-gradient(165deg,#2C4A3B,#1E3529);
+  color:#fff;position:relative;
+}
+.form-sec .sec-label{color:var(--gold-light)}
+.form-sec h2{color:#fff}
+.form-sec .sec-head p{color:rgba(255,255,255,.75)}
+.form-card{
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(212,180,131,.28);
+  border-radius:3px;padding:40px 30px;
+  backdrop-filter:blur(6px);
+}
+.field{margin-bottom:20px}
+label{display:block;font-size:13px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--gold-light);margin-bottom:9px}
+input[type=text],input[type=tel],input[type=email]{
+  width:100%;padding:17px 18px;font-family:inherit;font-size:16.5px;font-weight:300;
+  background:rgba(255,255,255,.96);border:1px solid transparent;border-radius:2px;
+  color:var(--ink);transition:border-color .15s ease, box-shadow .15s ease;
+}
+input:focus{outline:none;border-color:var(--gold-light);box-shadow:0 0 0 3px rgba(212,180,131,.28)}
+input.err{border-color:#E8836F;box-shadow:0 0 0 3px rgba(232,131,111,.25)}
+.opt{font-size:11px;letter-spacing:.06em;color:rgba(255,255,255,.45);text-transform:none}
+.consent{display:flex;gap:13px;align-items:flex-start;margin:26px 0 24px}
+.consent input{
+  flex:0 0 21px;width:21px;height:21px;margin-top:3px;accent-color:var(--gold);cursor:pointer;
+}
+.consent label{
+  font-size:12.6px;line-height:1.55;color:rgba(255,255,255,.66);
+  text-transform:none;letter-spacing:0;cursor:pointer;margin:0;
+}
+.consent a{color:var(--gold-light)}
+.err-msg{color:#F2A896;font-size:13.5px;margin-top:8px;display:none}
+.err-msg.show{display:block}
+.micro{
+  text-align:center;font-size:12.8px;color:rgba(255,255,255,.5);
+  margin-top:20px;line-height:1.6;
+}
+
+/* ---------- PODZIĘKOWANIE ---------- */
+.thanks{display:none;text-align:center;padding:24px 10px}
+.thanks.show{display:block;animation:fade .5s ease}
+@keyframes fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.thanks .check{
+  width:74px;height:74px;margin:0 auto 26px;border-radius:50%;
+  border:1.5px solid var(--gold-light);display:flex;align-items:center;justify-content:center;
+}
+.thanks .check svg{width:34px;height:34px;stroke:var(--gold-light);fill:none;stroke-width:1.6}
+.thanks h3{font-size:32px;color:#fff;margin-bottom:14px}
+.thanks p{color:rgba(255,255,255,.75);max-width:400px;margin:0 auto;font-size:16px}
+
+/* ---------- FAQ ---------- */
+.faq-item{border-bottom:1px solid var(--line)}
+.faq-q{
+  width:100%;background:none;border:none;cursor:pointer;font-family:inherit;
+  display:flex;justify-content:space-between;align-items:center;gap:18px;
+  padding:26px 0;text-align:left;font-size:18px;color:var(--ink);font-weight:400;
+}
+.faq-q:hover{color:var(--jade)}
+.faq-q .pm{flex:0 0 auto;color:var(--terracotta);font-size:22px;transition:transform .25s ease;line-height:1}
+.faq-item.open .pm{transform:rotate(45deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.faq-item.open .faq-a{max-height:460px}
+.faq-a p{padding:0 0 26px;color:var(--muted);font-size:15.5px;max-width:640px}
+
+/* ---------- STOPKA ---------- */
+footer{background:#1E3529;color:rgba(255,255,255,.6);padding:56px 0 40px;text-align:center;font-size:14px}
+footer .brand{font-size:22px;margin-bottom:18px;color:rgba(255,255,255,.9)}
+footer a{color:var(--gold-light);text-decoration:none}
+footer a:hover{text-decoration:underline}
+.foot-links{margin:18px 0;display:flex;gap:22px;justify-content:center;flex-wrap:wrap}
+.foot-note{font-size:12.4px;color:rgba(255,255,255,.38);margin-top:22px;max-width:520px;margin-left:auto;margin-right:auto;line-height:1.6}
+
+/* ---------- STICKY CTA (mobile) ---------- */
+.sticky{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+  background:rgba(250,246,240,.94);backdrop-filter:blur(10px);
+  border-top:1px solid var(--line);
+  transform:translateY(110%);transition:transform .3s ease;
+}
+.sticky.show{transform:none}
+.sticky .btn{padding:16px;font-size:15.5px}
+@media(min-width:721px){.sticky{display:none}}
+@media(max-width:720px){
+  body{font-size:16.5px}
+  section{padding:66px 0}
+  .card{padding:32px 24px}
+  .offer-box,.form-card{padding:34px 22px}
+  .hero{padding:64px 0 48px}
+}
+/* ---------- MODAL POLITYKI ---------- */
+.modal{
+  position:fixed;inset:0;z-index:100;display:none;
+  background:rgba(30,53,41,.6);backdrop-filter:blur(4px);
+  padding:20px;overflow-y:auto;
+}
+.modal.show{display:flex;align-items:flex-start;justify-content:center}
+.modal-box{
+  background:var(--cream);max-width:640px;width:100%;margin:auto;
+  padding:40px 30px;border-radius:3px;position:relative;
+}
+.modal-box h3{font-size:28px;margin-bottom:8px;color:var(--jade)}
+.modal-box h4{font-family:'Jost',sans-serif;font-size:14px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--terracotta);margin:22px 0 6px;font-weight:400}
+.modal-box p{font-size:14.5px;color:var(--muted)}
+.modal-close{
+  position:absolute;top:14px;right:16px;background:none;border:none;
+  font-size:30px;line-height:1;color:var(--muted);cursor:pointer;font-family:inherit;
+}
+</style>
+</head>
+<body>
+
+<!-- ================= HERO ================= -->
+<header class="hero">
+  <div class="wrap hero-inner">
+    <div class="brand">Sabai</div>
+    <div class="eyebrow">Wkrótce w Jarosławiu</div>
+    <h1>Autentyczny<br><em>masaż tajski</em></h1>
+    <p class="hero-sub">
+      Prawdziwe terapeutki z Tajlandii. Zapisz się na listę otwarcia
+      i odbierz <strong style="font-weight:400;color:var(--gold-light)">−30%</strong> na pierwszą wizytę.
+    </p>
+    <a href="#zapis" class="btn btn-gold" data-track="click_cta_hero">Chcę voucher −30%</a>
+    <p class="scarcity"><span class="dot"></span> Voucher −30% dla pierwszych 100 osób z listy</p>
+
+    <!-- LICZNIK SPOŁECZNEGO DOWODU
+         Liczbę bierze teraz PRAWDZIWĄ z bazy (funkcja public_lead_count).
+         Nie trzeba jej wpisywać ręcznie i nie da się jej zmyślić.
+         Sam się pokazuje dopiero od 30 zapisów — niżej wygląda słabo. -->
+    <p class="counter" id="counter" style="display:none">
+      Już <strong id="counterN">—</strong> osób czeka na otwarcie
+    </p>
+  </div>
+</header>
+
+<!-- ================= DLACZEGO MY ================= -->
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="sec-label">Dlaczego Sabai</p>
+      <h2>Nie gabinet. Ucieczka.</h2>
+      <p>Zamykasz za sobą drzwi i przez godzinę Jarosław przestaje istnieć.</p>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C9 6 9 10 12 14c3-4 3-8 0-12z"/><path d="M12 14v8"/><path d="M12 18c-4-1-6.5-3.5-7.5-7.5C8.5 11.5 11 14 12 18z"/><path d="M12 18c4-1 6.5-3.5 7.5-7.5C15.5 11.5 13 14 12 18z"/></svg></div>
+        <h3>Terapeutki z Tajlandii</h3>
+        <p>Certyfikowane specjalistki, które uczyły się masażu tam, gdzie powstał — nie na weekendowym kursie.</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-1.5 2.5-1 4 0 5.5C13 7 13.5 5.5 12 3z"/><path d="M12 8.5v3"/><circle cx="12" cy="15.5" r="5.5"/><path d="M9 15.5c1.2-1.6 4.8-1.6 6 0"/></svg></div>
+        <h3>Rytuał, nie zabieg</h3>
+        <p>Obmycie stóp, zapach olejków, ciepło i cisza. Doświadczenie zaczyna się, zanim dotkniemy Twoich pleców.</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8c3-3 6-3 8 0 2-3 5-3 8 0"/><path d="M4 14c3-3 6-3 8 0 2-3 5-3 8 0"/><path d="M4 20c3-3 6-3 8 0 2-3 5-3 8 0"/></svg></div>
+        <h3>Pełen wybór masaży</h3>
+        <p>Tajski klasyczny, na olejkach, balijski, pleców i karku, stóp — oraz masaż dla dwojga.</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="18" height="12" rx="1"/><path d="M3 13h18"/><path d="M12 9v12"/><path d="M12 9C10.5 6 8 5 6.5 6.2 5 7.4 6.5 9 12 9z"/><path d="M12 9c1.5-3 4-4 5.5-2.8C19 7.4 17.5 9 12 9z"/></svg></div>
+        <h3>Idealny prezent</h3>
+        <p>Voucher na masaż to prezent, którego nikt nie odłoży do szuflady. Urodziny, święta, „bez okazji”.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= NASTRÓJ / ZDJĘCIA =================
+     JAK WSTAWIĆ ZDJĘCIA: wrzuć pliki do folderu img/ obok index.html
+     i odkomentuj style="..." przy każdym .ph, np.:
+        <div class="ph has-photo" style="background-image:url('img/olejki.jpg')">
+     Bez zdjęć sekcja pokazuje elegancki wzór — strona nie wygląda na zepsutą.
+
+     ZASADA, KTÓREJ NIE ŁAM: to mają być zdjęcia NASTROJU (olejki, dłonie,
+     kamienie, storczyk, herbata, świece). NIE wolno pokazywać konkretnego
+     wnętrza i sugerować, że to Twój salon — bo salonu jeszcze nie ma.
+     Nigdy nie bierz zdjęć konkurencji ani zdjęć masażystek, których nie znasz.
+     ==================================================== -->
+<section class="mood">
+  <div class="wrap">
+    <div class="mood-grid">
+      <div class="ph"><span>Olejki, ciepło, cisza</span></div>
+      <div class="mood-col">
+        <div class="ph"><span>Rytuał</span></div>
+        <div class="ph"><span>Dotyk, który zna swoją robotę</span></div>
+      </div>
+    </div>
+    <p class="ph-note">Zdjęcia poglądowe — salon jest w przygotowaniu.</p>
+  </div>
+</section>
+
+<!-- ================= OFERTA ================= -->
+<section class="offer">
+  <div class="wrap narrow">
+    <div class="sec-head">
+      <p class="sec-label">Lista otwarcia</p>
+      <h2>Co zyskujesz zapisując się</h2>
+      <p>Zapisanych na listę traktujemy inaczej niż resztę miasta.</p>
+    </div>
+    <div class="offer-box">
+      <ul class="perks">
+        <li>
+          <span class="num">1</span>
+          <span><strong>Voucher −30% na pierwszy masaż</strong>
+          <span class="d">Tylko dla osób z listy. Po otwarciu ta zniżka już nie wróci.</span></span>
+        </li>
+        <li>
+          <span class="num">2</span>
+          <span><strong>Pierwszeństwo rezerwacji</strong>
+          <span class="d">Wybierasz termin, zanim zapisy otworzą się publicznie.</span></span>
+        </li>
+        <li>
+          <span class="num">3</span>
+          <span><strong>SMS z datą otwarcia</strong>
+          <span class="d">Dowiadujesz się pierwszy — jeden SMS, bez spamu.</span></span>
+        </li>
+      </ul>
+      <p style="text-align:center;margin-top:36px">
+        <a href="#zapis" class="btn btn-gold" data-track="click_cta_offer">Zapisz mnie na listę</a>
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FORMULARZ ================= -->
+<section class="form-sec" id="zapis">
+  <div class="wrap narrow">
+    <div class="sec-head" id="formHead">
+      <p class="sec-label">Zapis na listę otwarcia</p>
+      <h2>Zostaw imię i telefon</h2>
+      <p>Wyślemy Ci voucher −30% SMS-em, zanim otworzymy drzwi.</p>
+    </div>
+
+    <div class="form-card">
+      <form id="leadForm" novalidate>
+        <div class="field">
+          <label for="name">Imię</label>
+          <input type="text" id="name" name="imie" autocomplete="given-name" placeholder="Anna">
+        </div>
+        <div class="field">
+          <label for="phone">Telefon</label>
+          <input type="tel" id="phone" name="telefon" autocomplete="tel" inputmode="tel" placeholder="600 100 200">
+        </div>
+        <div class="field">
+          <label for="email">E-mail <span class="opt">(opcjonalnie)</span></label>
+          <input type="email" id="email" name="email" autocomplete="email" placeholder="anna@example.com">
+        </div>
+
+        <div class="consent">
+          <input type="checkbox" id="rodo" name="zgoda">
+          <label for="rodo">
+            Wyrażam zgodę na przetwarzanie moich danych (imię, telefon) w celu kontaktu
+            w sprawie otwarcia salonu i przesłania vouchera. Administratorem danych jest
+            <strong style="font-weight:400">[NAZWA FIRMY]</strong>. Zgodę mogę wycofać w każdej chwili.
+            <a href="#" id="ppLink">Polityka prywatności</a>.
+          </label>
+        </div>
+        <p class="err-msg" id="errMsg"></p>
+
+        <button type="submit" class="btn btn-gold btn-full" id="submitBtn">Zapisz mnie na listę −30%</button>
+
+        <p class="micro">
+          Bez zobowiązań. Nie pobieramy żadnych opłat.<br>
+          Twoje dane wykorzystamy wyłącznie do kontaktu ws. otwarcia.
+        </p>
+      </form>
+
+      <div class="thanks" id="thanks">
+        <div class="check">
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5.5 5.5L20 7"/></svg>
+        </div>
+        <h3>Jesteś na liście</h3>
+        <p>Dziękujemy! Odezwiemy się SMS-em, gdy tylko ruszamy — z Twoim voucherem −30%.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section>
+  <div class="wrap narrow">
+    <div class="sec-head">
+      <p class="sec-label">Pytania</p>
+      <h2>Dobrze wiedzieć</h2>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q">Kiedy otwarcie? <span class="pm">+</span></button>
+      <div class="faq-a"><p>Planujemy jesień 2026. Dokładnej daty jeszcze nie ogłaszamy — osoby zapisane na listę dowiedzą się SMS-em jako pierwsze.</p></div>
+    </div>
+    <!-- To pytanie ludzie i tak sobie zadadzą. Lepiej odpowiedzieć pierwszy,
+         uczciwie i BEZ obrażania konkurencji. Atakowanie innych wygląda słabo
+         i jest ryzykowne prawnie. -->
+    <div class="faq-item">
+      <button class="faq-q">Czy w Jarosławiu nie ma już masażu tajskiego? <span class="pm">+</span></button>
+      <div class="faq-a"><p>Jest — i dobrze, bo to znaczy, że jest na niego popyt. Nie udajemy pierwszych. Powstajemy, bo jeden salon na miasto i okolice to za mało: terminy trudno dostać, a my chcemy dać Ci wybór, prawdziwe tajskie terapeutki i miejsce, z którego nie chce się wychodzić.</p></div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q">Ile będzie kosztował masaż? <span class="pm">+</span></button>
+      <div class="faq-a"><p>Stawiamy na jakość, nie na najniższą cenę — orientacyjnie ok. 200 zł za 60 minut. Osoby z listy otwarcia płacą za pierwszą wizytę −30%.</p></div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q">Gdzie będzie salon? <span class="pm">+</span></button>
+      <div class="faq-a"><p>W centrum Jarosławia. Dokładny adres podamy zapisanym przed otwarciem, razem z voucherem.</p></div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q">Czy to naprawdę terapeutki z Tajlandii? <span class="pm">+</span></button>
+      <div class="faq-a"><p>Tak. Pracować u nas będą certyfikowane terapeutki, które szkoliły się w Tajlandii — to fundament tego miejsca, nie dodatek marketingowy.</p></div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q">Czy zapis mnie do czegoś zobowiązuje? <span class="pm">+</span></button>
+      <div class="faq-a"><p>Nie. Zapis jest bezpłatny i niezobowiązujący — nie pobieramy żadnych opłat i nie rezerwujesz jeszcze konkretnego terminu. Zostawiasz numer, żebyśmy mogli dać znać o otwarciu i przekazać voucher.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= STOPKA ================= -->
+<footer>
+  <div class="wrap">
+    <div class="brand" style="letter-spacing:.3em;text-indent:.3em">Sabai</div>
+    <p>Autentyczny masaż tajski — wkrótce w Jarosławiu</p>
+    <div class="foot-links">
+      <a href="#zapis">Lista otwarcia</a>
+      <a href="mailto:kontakt@example.pl">kontakt@example.pl</a>
+      <a href="#" id="ppLink2">Polityka prywatności</a>
+    </div>
+    <p class="foot-note">
+      Salon jest w przygotowaniu — otwarcie planowane, uzależnione od zainteresowania.
+      Zapis na listę jest bezpłatny i nie stanowi rezerwacji ani zobowiązania żadnej ze stron.
+      Voucher −30% honorujemy po otwarciu salonu.
+    </p>
+  </div>
+</footer>
+
+<!-- ================= STICKY CTA ================= -->
+<div class="sticky" id="sticky">
+  <a href="#zapis" class="btn btn-gold btn-full" data-track="click_cta_sticky">Chcę voucher −30%</a>
+</div>
+
+<!-- ================= POLITYKA PRYWATNOŚCI ================= -->
+<div class="modal" id="ppModal">
+  <div class="modal-box">
+    <button class="modal-close" id="ppClose">&times;</button>
+    <h3>Polityka prywatności</h3>
+    <p style="font-size:13px">Uzupełnij pola [ ] swoimi danymi przed publikacją.</p>
+    <h4>Administrator danych</h4>
+    <p>[NAZWA FIRMY], [ADRES], kontakt: [E-MAIL].</p>
+    <h4>Jakie dane zbieramy</h4>
+    <p>Imię i numer telefonu (opcjonalnie e-mail), podane dobrowolnie w formularzu zapisu na listę otwarcia.</p>
+    <h4>Cel i podstawa</h4>
+    <p>Dane przetwarzamy wyłącznie w celu kontaktu w sprawie otwarcia salonu i przekazania vouchera −30%. Podstawą jest Twoja zgoda (art. 6 ust. 1 lit. a RODO).</p>
+    <h4>Jak długo</h4>
+    <p>Do 12 miesięcy od zapisu lub do momentu wycofania zgody — w zależności od tego, co nastąpi wcześniej. Jeśli salon nie powstanie, dane usuwamy.</p>
+    <h4>Twoje prawa</h4>
+    <p>Masz prawo dostępu do danych, ich sprostowania, usunięcia, ograniczenia przetwarzania oraz wycofania zgody w każdej chwili — wystarczy wiadomość na [E-MAIL]. Przysługuje Ci też skarga do Prezesa UODO.</p>
+    <h4>Odbiorcy</h4>
+    <p>Dane przechowujemy u dostawcy usługi formularza oraz hostingu, działających na terenie UE. Nie sprzedajemy ich i nie przekazujemy podmiotom trzecim w celach marketingowych.</p>
+    <h4>Pliki cookie i pomiar</h4>
+    <p>Strona korzysta z Piksela Meta (Facebook) w celu pomiaru skuteczności reklam. Możesz zablokować pliki cookie w ustawieniach przeglądarki.</p>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Zgłoszenia lecą teraz do Twojej bazy Supabase i pokazują się w admin.html.
+   Konfiguracja (URL + klucz) jest na GÓRZE pliku, w sekcji <head>.
+   Dopóki jej nie uzupełnisz, formularz działa w trybie DEMO:
+   pokazuje podziękowanie, ale NIC NIE ZAPISUJE.
+   ============================================================ */
+
+/* Bezpiecznik. Moduł analityki z sekcji <head> dociąga bibliotekę z internetu,
+   więc przez ułamek sekundy po otwarciu strony jeszcze go nie ma. Gdyby ktoś
+   kliknął w tym czasie, gołe wywołanie sabaiTrack() wywaliłoby błędem i zepsuło
+   formularz. Zasada jest prosta: analityka może nie zadziałać, formularz NIGDY. */
+const track = (name, fbEvent) =>
+  (typeof window.sabaiTrack === 'function') ? window.sabaiTrack(name, fbEvent) : null;
+
+const form = document.getElementById('leadForm');
+const thanks = document.getElementById('thanks');
+const formHead = document.getElementById('formHead');
+const errMsg = document.getElementById('errMsg');
+const btn = document.getElementById('submitBtn');
+const nameI = document.getElementById('name');
+const phoneI = document.getElementById('phone');
+const rodoI = document.getElementById('rodo');
+
+function fail(msg, el){
+  errMsg.textContent = msg;
+  errMsg.classList.add('show');
+  if (el){ el.classList.add('err'); el.focus(); }
+  return false;
+}
+function clearErr(){
+  errMsg.classList.remove('show');
+  [nameI, phoneI].forEach(e => e.classList.remove('err'));
+}
+[nameI, phoneI].forEach(e => e.addEventListener('input', clearErr));
+rodoI.addEventListener('change', clearErr);
+
+// Polski numer: 9 cyfr, opcjonalnie +48
+function validPhone(v){
+  const d = v.replace(/[\s\-()]/g,'').replace(/^\+?48/,'');
+  return /^\d{9}$/.test(d);
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  clearErr();
+
+  if (nameI.value.trim().length < 2) { track('form_error'); return fail('Podaj swoje imię.', nameI); }
+  if (!validPhone(phoneI.value))     { track('form_error'); return fail('Podaj poprawny numer telefonu (9 cyfr).', phoneI); }
+  if (!rodoI.checked)                { track('form_error'); return fail('Zaznacz zgodę, żebyśmy mogli się z Tobą skontaktować.'); }
+
+  btn.disabled = true;
+  btn.textContent = 'Wysyłanie...';
+
+  const data = {
+    imie: nameI.value.trim(),
+    telefon: phoneI.value.trim(),
+    email: document.getElementById('email').value.trim() || null,
+    zgoda_rodo: true
+  };
+
+  try {
+    await sabaiSaveLead(data);
+
+    /* Kolejność jest celowa: najpierw zapis do bazy, potem zdarzenie.
+       Gdyby zapis padł, lecimy do catch i NIE mówimy człowiekowi "jesteś na
+       liście" — bo nie jest. Zgłoszenie liczone jako Lead ma odpowiadać
+       zgłoszeniu, które faktycznie leży w bazie. */
+    track('lead', 'Lead');   // do Twojej bazy + do Piksela Meta
+
+    form.style.display = 'none';
+    formHead.style.display = 'none';
+    thanks.classList.add('show');
+    thanks.scrollIntoView({behavior:'smooth', block:'center'});
+    document.getElementById('sticky').classList.remove('show');
+
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Zapisz mnie na listę −30%';
+    fail('Coś poszło nie tak. Spróbuj ponownie za chwilę.');
+  }
+});
+
+// FAQ — mierzymy tylko ROZWINIĘCIE, nie zwinięcie
+document.querySelectorAll('.faq-q').forEach(q => {
+  q.addEventListener('click', () => {
+    const opened = q.parentElement.classList.toggle('open');
+    if (opened) track('faq_open');
+  });
+});
+
+/* "Zaczął wypełniać formularz" — odpala się RAZ, przy pierwszym kliknięciu w
+   pole. Zestawione z liczbą zapisów mówi Ci, ilu ludzi zaczęło i się rozmyśliło.
+   Jeśli ta różnica będzie duża, problem jest w formularzu, nie w reklamie. */
+let started = false;
+form.addEventListener('focusin', () => {
+  if (!started) { started = true; track('form_start'); }
+}, { once:false });
+
+// Sticky CTA — pokazuje się po opuszczeniu hero, znika przy formularzu
+const sticky = document.getElementById('sticky');
+const heroEl = document.querySelector('.hero');
+const formEl = document.getElementById('zapis');
+const io = new IntersectionObserver(() => {
+  const heroGone = heroEl.getBoundingClientRect().bottom < 0;
+  const formVisible = formEl.getBoundingClientRect().top < window.innerHeight * 0.9
+                   && formEl.getBoundingClientRect().bottom > 0;
+  sticky.classList.toggle('show', heroGone && !formVisible && !thanks.classList.contains('show'));
+}, {threshold:[0,.1,.5,1]});
+io.observe(heroEl); io.observe(formEl);
+window.addEventListener('scroll', () => {
+  const heroGone = heroEl.getBoundingClientRect().bottom < 0;
+  const fr = formEl.getBoundingClientRect();
+  const formVisible = fr.top < window.innerHeight * 0.9 && fr.bottom > 0;
+  sticky.classList.toggle('show', heroGone && !formVisible && !thanks.classList.contains('show'));
+}, {passive:true});
+
+// Modal polityki prywatności
+const modal = document.getElementById('ppModal');
+const openPP = e => {
+  e.preventDefault();
+  modal.classList.add('show');
+  document.body.style.overflow='hidden';
+  track('privacy_open');
+};
+document.getElementById('ppLink').addEventListener('click', openPP);
+document.getElementById('ppLink2').addEventListener('click', openPP);
+const closePP = () => { modal.classList.remove('show'); document.body.style.overflow=''; };
+document.getElementById('ppClose').addEventListener('click', closePP);
+modal.addEventListener('click', e => { if (e.target === modal) closePP(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePP(); });
+
+/* Licznik "Już X osób czeka na otwarcie".
+   Liczba jest PRAWDZIWA — prosto z bazy, funkcja public_lead_count().
+   Pokazuje się dopiero od 30 zapisów: "Już 3 osoby czekają" działa przeciwko
+   Tobie. Poniżej progu po prostu go nie ma i to jest uczciwe rozwiązanie —
+   nic nie twierdzisz, zamiast twierdzić nieprawdę. */
+const MIN_DO_POKAZANIA = 30;
+window.addEventListener('load', async () => {
+  if (!window.SABAI_ON || typeof sabaiLeadCount !== 'function') return;
+  const n = await sabaiLeadCount();
+  if (n >= MIN_DO_POKAZANIA) {
+    document.getElementById('counterN').textContent = n;
+    document.getElementById('counter').style.display = 'block';
+  }
+});
+</script>
+</body>
+</html>
