@@ -261,10 +261,12 @@ h1 em{display:block;font-style:italic;color:var(--gold-light);font-size:.6em;mar
   -webkit-tap-highlight-color:transparent;
 }
 .btn-gold{
-  background:linear-gradient(135deg,var(--gold-light),var(--gold));
-  color:#241F1A;box-shadow:0 6px 22px rgba(122,96,66,.34);
+  /* Przyciski celowo o ton głębsze niż jasne akcenty w tytule: ciepły bronz,
+     który wyraźnie wybija się na zieleni i na beżu, ale nadal jest jasny. */
+  background:linear-gradient(135deg,#BFA075,#8D6D45);
+  color:#231C14;box-shadow:0 6px 22px rgba(90,68,42,.38);
 }
-.btn-gold:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(122,96,66,.44)}
+.btn-gold:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(90,68,42,.48)}
 .btn-gold:active{transform:translateY(0)}
 .btn-full{display:block;width:100%;text-align:center;padding:21px}
 
