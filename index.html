@@ -122,12 +122,10 @@ addEventListener('click', e => {
   /* Paleta przeniesiona ze svahaspa.com — ciepły beż + ciemny brąz + kremowa
      biel. Zielenie (--jade / --jade-light) oraz akcenty złota zostają
      nietknięte, bo zielone banery mają zostać takie, jakie są. */
-  --cream:#2C221C;      /* główne tło sekcji — ciemny espresso-brąz */
-  --cream-2:#241A15;    /* nieco głębszy brąz — sekcja oferty */
-  --ink:#2C221C;        /* ciemny brąz — tekst NA jasnych kartach */
-  --muted:#6E6055;      /* przygaszony brąz — tekst drugorzędny na kartach */
-  --card:#F5EFE6;       /* jasne, ciepłe tło kart (svaha krem) */
-  --text-light:#EDE6DA; /* jasny tekst na ciemnym brązowym tle */
+  --cream:#EAE3D7;      /* główne jasne tło sekcji (svaha beż) */
+  --cream-2:#E0D6C8;    /* nieco głębszy beż — sekcja oferty */
+  --ink:#2C221C;        /* ciemny ciepły brąz — tekst (svaha) */
+  --muted:#6E6055;      /* przygaszony brąz — tekst drugorzędny */
   --jade:#2C4A3B;       /* ZIELEŃ — nietknięta */
   --jade-light:#3D6350; /* ZIELEŃ — nietknięta */
   --terracotta:#9A7856; /* akcent etykiet — ciepły bronz zamiast czerwieni */
@@ -142,7 +140,7 @@ html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
 body{
   font-family:'Jost',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
   font-weight:300;
-  color:var(--text-light);
+  color:var(--ink);
   background:var(--cream);
   line-height:1.65;
   font-size:17px;
@@ -283,7 +281,7 @@ h2{font-size:clamp(30px,6vw,44px);margin-bottom:16px}
 /* ---------- KAFELKI ---------- */
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:22px}
 .card{
-  background:var(--card);border:1px solid var(--line);border-radius:3px;
+  background:#fff;border:1px solid var(--line);border-radius:3px;
   padding:38px 30px;text-align:center;
   transition:transform .2s ease,box-shadow .2s ease;
 }
@@ -328,7 +326,7 @@ h2{font-size:clamp(30px,6vw,44px);margin-bottom:16px}
 /* ---------- OFERTA ---------- */
 .offer{background:var(--cream-2)}
 .offer-box{
-  background:var(--card);border:1px solid var(--line);border-top:3px solid var(--gold);
+  background:#fff;border:1px solid var(--line);border-top:3px solid var(--gold);
   border-radius:3px;padding:48px 34px;box-shadow:var(--shadow);
 }
 .perks{list-style:none;display:grid;gap:22px;margin:0 auto;max-width:460px}
@@ -435,7 +433,7 @@ footer a:hover{text-decoration:underline}
 .sticky{
   position:fixed;left:0;right:0;bottom:0;z-index:50;
   padding:12px 16px calc(12px + env(safe-area-inset-bottom));
-  background:rgba(36,26,21,.95);backdrop-filter:blur(10px);
+  background:rgba(234,227,215,.95);backdrop-filter:blur(10px);
   border-top:1px solid var(--line);
   transform:translateY(110%);transition:transform .3s ease;
 }
@@ -488,8 +486,8 @@ footer a:hover{text-decoration:underline}
    w czytaniu tekstu. */
 .leaves-bg{
   position:fixed;inset:0;z-index:5;pointer-events:none;
-  opacity:.06;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Cg fill='none' stroke='%23D3C2A6' stroke-width='1'%3E%3Cpath d='M110 26c-16 24-16 47 0 71 16-24 16-47 0-71z'/%3E%3Cpath d='M110 97v96'/%3E%3Cpath d='M110 127c-20-5-35-20-40-40 20 5 35 20 40 40z'/%3E%3Cpath d='M110 127c20-5 35-20 40-40-20 5-35 20-40 40z'/%3E%3Cpath d='M110 170c-16-4-28-16-32-32 16 4 28 16 32 32z'/%3E%3Cpath d='M110 170c16-4 28-16 32-32-16 4-28 16-32 32z'/%3E%3C/g%3E%3C/svg%3E");
+  opacity:.1;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Cg fill='none' stroke='%232C4A3B' stroke-width='1'%3E%3Cpath d='M110 26c-16 24-16 47 0 71 16-24 16-47 0-71z'/%3E%3Cpath d='M110 97v96'/%3E%3Cpath d='M110 127c-20-5-35-20-40-40 20 5 35 20 40 40z'/%3E%3Cpath d='M110 127c20-5 35-20 40-40-20 5-35 20-40 40z'/%3E%3Cpath d='M110 170c-16-4-28-16-32-32 16 4 28 16 32 32z'/%3E%3Cpath d='M110 170c16-4 28-16 32-32-16 4-28 16-32 32z'/%3E%3C/g%3E%3C/svg%3E");
   background-size:220px 220px;
 }
 /* Karty i boksy zawsze NAD wzorem — inaczej wzór "przeświecałby" przez ich
@@ -501,21 +499,6 @@ footer a:hover{text-decoration:underline}
    tle robi się gęściej/podwójnie niż gdziekolwiek indziej. */
 .hero,.form-sec{z-index:6}
 
-/* ---------- TEKST NA CIEMNYM BRĄZOWYM TLE ----------
-   Elementy leżące bezpośrednio na ciemnym tle sekcji dostają jasny kolor,
-   inaczej (ciemny brąz na ciemnym brązie) byłyby niewidoczne.
-   Teksty wewnątrz jasnych kart mają swoje własne, ciemne kolory i tu ich
-   nie ruszamy. */
-.sec-head h2{color:var(--text-light)}
-.sec-head p{color:rgba(237,230,218,.72)}
-.sec-label{color:var(--gold-light)}
-.ph-note{color:rgba(237,230,218,.58)}
-.faq-q{color:var(--text-light)}
-.faq-q:hover{color:var(--gold-light)}
-.faq-q .pm{color:var(--gold-light)}
-.faq-a p{color:rgba(237,230,218,.72)}
-.faq-item{border-bottom-color:rgba(237,230,218,.16)}
-
 /* ---------- MODAL POLITYKI ---------- */
 .modal{
   position:fixed;inset:0;z-index:100;display:none;
@@ -524,7 +507,7 @@ footer a:hover{text-decoration:underline}
 }
 .modal.show{display:flex;align-items:flex-start;justify-content:center}
 .modal-box{
-  background:var(--card);max-width:640px;width:100%;margin:auto;
+  background:var(--cream);max-width:640px;width:100%;margin:auto;
   padding:40px 30px;border-radius:3px;position:relative;
 }
 .modal-box h3{font-size:28px;margin-bottom:8px;color:var(--jade)}
