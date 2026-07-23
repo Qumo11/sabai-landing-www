@@ -502,6 +502,10 @@ footer a:hover{text-decoration:underline}
    białe tło i przygaszał tekst w środku. Wzór ma być widoczny tylko na
    pustym tle strony, między elementami, nie na nich. */
 .card,.offer-box,.form-card,.modal-box,.ph,footer{position:relative;z-index:6}
+/* Sekcje z WŁASNYM wzorem listków (hero, formularz) muszą całkowicie
+   zasłaniać globalny wzór strony — inaczej oba się nakładają i na zielonym
+   tle robi się gęściej/podwójnie niż gdziekolwiek indziej. */
+.hero,.form-sec{z-index:6}
 
 /* ---------- MODAL POLITYKI ---------- */
 .modal{
