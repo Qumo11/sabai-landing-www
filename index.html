@@ -480,10 +480,14 @@ footer a:hover{text-decoration:underline}
    w czytaniu tekstu. */
 .leaves-bg{
   position:fixed;inset:0;z-index:5;pointer-events:none;
-  opacity:.16;mix-blend-mode:multiply;
+  opacity:.1;mix-blend-mode:multiply;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Cg fill='none' stroke='%232C4A3B' stroke-width='1'%3E%3Cpath d='M110 26c-16 24-16 47 0 71 16-24 16-47 0-71z'/%3E%3Cpath d='M110 97v96'/%3E%3Cpath d='M110 127c-20-5-35-20-40-40 20 5 35 20 40 40z'/%3E%3Cpath d='M110 127c20-5 35-20 40-40-20 5-35 20-40 40z'/%3E%3Cpath d='M110 170c-16-4-28-16-32-32 16 4 28 16 32 32z'/%3E%3Cpath d='M110 170c16-4 28-16 32-32-16 4-28 16-32 32z'/%3E%3C/g%3E%3C/svg%3E");
   background-size:220px 220px;
 }
+/* Karty i boksy zawsze NAD wzorem — inaczej wzór "przeświecałby" przez ich
+   białe tło i przygaszał tekst w środku. Wzór ma być widoczny tylko na
+   pustym tle strony, między elementami, nie na nich. */
+.card,.offer-box,.form-card,.modal-box,.ph,footer{position:relative;z-index:6}
 
 /* ---------- MODAL POLITYKI ---------- */
 .modal{
