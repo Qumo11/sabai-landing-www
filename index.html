@@ -154,20 +154,11 @@ img{max-width:100%;display:block}
   min-height:100svh;
   display:flex;align-items:center;
   padding:72px 0 60px;
-  /* JEDNO płynne tło na całą wysokość — bez nakładek, pierścieni i szwów wzoru.
-     Zieleń trzyma się u góry, a na samym dole gradient dochodzi do kremu,
-     dokładnie takiego jak sekcja poniżej. Dlatego styk jest niewidoczny,
-     a całe przejście idealnie gładkie. */
-  background:linear-gradient(180deg,
-    #2C4A3B 0%,
-    #2C4A3B 32%,
-    #365040 46%,
-    #4F6049 59%,
-    #74836A 71%,
-    #A2A991 81%,
-    #CBCBB9 89%,
-    #E9E4D9 95%,
-    var(--cream) 100%);
+  /* Zielone tło na całej wysokości hero — subtelny pionowy gradient dla
+     głębi (jaśniej u góry, ciemniej na dole), ale BEZ rozjaśniania do kremu.
+     Dół jest ciemnozielony, więc pod hero jest zwykłe, twarde odcięcie
+     od kremowej sekcji. */
+  background:linear-gradient(180deg,#3D6350 0%,#2C4A3B 52%,#1E3529 100%);
   overflow:hidden;
 }
 /* Przywrócony delikatny botaniczny wzór (kratka listków) w tle hero —
@@ -247,16 +238,14 @@ h1 em{display:block;font-style:italic;color:var(--gold-light)}
 .btn-arrow{display:inline-flex;align-items:center;gap:12px}
 .btn-arrow .ar{transition:transform .2s ease}
 .btn-gold:hover .ar{transform:translateX(5px)}
-/* Meta na dole hero */
-/* Meta przypięta do samego dołu hero — zawsze na kremowej części tła,
-   dlatego ma ciemny kolor i jest czytelna niezależnie od wysokości ekranu. */
+/* Meta przypięta do dołu hero — na ciemnozielonym tle, więc jasny tekst. */
 .hero-meta{
   position:absolute;left:0;right:0;bottom:28px;z-index:2;padding:0 20px;
   display:flex;align-items:center;justify-content:center;
-  gap:16px;flex-wrap:wrap;font-size:13.5px;letter-spacing:.02em;color:var(--muted);
+  gap:16px;flex-wrap:wrap;font-size:13.5px;letter-spacing:.02em;color:rgba(255,255,255,.7);
 }
-.hero-meta b{font-weight:500;color:var(--gold)}
-.hero-meta .sep{width:4px;height:4px;border-radius:50%;background:var(--gold);opacity:.55}
+.hero-meta b{font-weight:500;color:var(--gold-light)}
+.hero-meta .sep{width:4px;height:4px;border-radius:50%;background:var(--gold-light);opacity:.6}
 .counter{margin-top:16px;font-size:14px;color:rgba(255,255,255,.78)}
 .counter strong{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--gold-light);font-weight:500}
 
