@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>document.documentElement.classList.add('js')</script>
 <title>Sabai — Autentyczny masaż tajski wkrótce w Jarosławiu</title>
 <meta name="description" content="Prawdziwe terapeutki z Tajlandii. Zapisz się na listę otwarcia i odbierz voucher -30% na pierwszą wizytę.">
 <meta name="robots" content="index, follow">
@@ -165,8 +166,17 @@ img{max-width:100%;display:block}
   background-size:240px 240px;
 }
 .hero::after{
-  content:'';position:absolute;left:0;right:0;bottom:0;height:120px;
-  background:linear-gradient(to bottom,rgba(250,246,240,0),var(--cream));
+  content:'';position:absolute;left:0;right:0;bottom:-1px;height:230px;
+  pointer-events:none;
+  /* Krzywa złagodzona — zieleń trzyma się dłużej, a rozjaśnienie do kremu
+     dzieje się przy samym dole. Dzięki temu znika szara "brudna" smuga. */
+  background:linear-gradient(to bottom,
+    rgba(250,246,240,0)   0%,
+    rgba(250,246,240,.06) 32%,
+    rgba(250,246,240,.22) 56%,
+    rgba(250,246,240,.55) 77%,
+    rgba(250,246,240,.88) 92%,
+    var(--cream)          100%);
 }
 .hero-inner{position:relative;z-index:2;text-align:center;color:#fff;width:100%}
 .eyebrow{
@@ -377,6 +387,33 @@ footer a:hover{text-decoration:underline}
   .offer-box,.form-card{padding:34px 22px}
   .hero{padding:64px 0 48px}
 }
+/* ============================================================
+   ANIMACJE — wszystko poniżej wyłącza się samo, gdy ktoś ma
+   w systemie ustawione "ogranicz animacje" (dostępność).
+   ============================================================ */
+@media (prefers-reduced-motion: no-preference){
+
+  /* Wejście sekcji hero — elementy pojawiają się miękko, jeden po drugim */
+  html.js .hero-inner > *{animation:heroIn .85s cubic-bezier(.22,.61,.36,1) backwards}
+  html.js .hero-inner > *:nth-child(1){animation-delay:.15s}
+  html.js .hero-inner > *:nth-child(2){animation-delay:.26s}
+  html.js .hero-inner > *:nth-child(3){animation-delay:.37s}
+  html.js .hero-inner > *:nth-child(4){animation-delay:.48s}
+  html.js .hero-inner > *:nth-child(5){animation-delay:.60s}
+  html.js .hero-inner > *:nth-child(6){animation-delay:.72s}
+  html.js .hero-inner > *:nth-child(7){animation-delay:.84s}
+  @keyframes heroIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+
+  /* Bardzo powolny dryf botanicznego wzoru w tle hero — subtelne "życie" */
+  .hero::before{animation:drift 46s linear infinite}
+  @keyframes drift{from{background-position:0 0}to{background-position:240px 240px}}
+
+  /* Odsłanianie treści przy przewijaniu (klasy dokłada skrypt na dole strony) */
+  .reveal{opacity:0;transform:translateY(28px);
+    transition:opacity .7s ease, transform .75s cubic-bezier(.22,.61,.36,1)}
+  .reveal.is-visible{opacity:1;transform:none}
+}
+
 /* ---------- MODAL POLITYKI ---------- */
 .modal{
   position:fixed;inset:0;z-index:100;display:none;
@@ -797,6 +834,51 @@ window.addEventListener('load', async () => {
     document.getElementById('counter').style.display = 'block';
   }
 });
+
+/* ============================================================
+   Odsłanianie sekcji przy przewijaniu.
+   Elementy pojawiają się miękko dopiero, gdy wjeżdżają na ekran.
+   Szanujemy ustawienie "ogranicz animacje" — wtedy nic nie ukrywamy.
+   ============================================================ */
+(function(){
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const reg = [];
+  const mark = (el, delay) => {
+    el.classList.add('reveal');
+    if (delay) el.style.transitionDelay = delay + 'ms';
+    reg.push(el);
+  };
+
+  // Nagłówki sekcji
+  document.querySelectorAll('.sec-head').forEach(el => mark(el, 0));
+  // Kafelki "Dlaczego my" — kaskadowo w obrębie siatki
+  document.querySelectorAll('.grid').forEach(g =>
+    g.querySelectorAll('.card').forEach((c, i) => mark(c, i * 90)));
+  // Zdjęcia nastroju
+  document.querySelectorAll('.mood .ph').forEach((p, i) => mark(p, i * 90));
+  // Karta oferty i karta formularza
+  document.querySelectorAll('.offer-box, .form-card').forEach(el => mark(el, 0));
+  // Korzyści z listy — kaskadowo
+  document.querySelectorAll('.perks li').forEach((l, i) => mark(l, i * 80));
+  // Pytania FAQ
+  document.querySelectorAll('.faq-item').forEach((f, i) => mark(f, i * 50));
+
+  // Po animacji sprzątamy klasy, żeby nie spowalniały późniejszych efektów hover
+  const clean = el => { el.classList.remove('reveal', 'is-visible'); el.style.transitionDelay = ''; };
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(en => {
+      if (!en.isIntersecting) return;
+      const el = en.target;
+      el.classList.add('is-visible');
+      el.addEventListener('transitionend', () => clean(el), { once:true });
+      io.unobserve(el);
+    });
+  }, { threshold:.1, rootMargin:'0px 0px -5% 0px' });
+
+  reg.forEach(el => io.observe(el));
+})();
 </script>
 </body>
 </html>
