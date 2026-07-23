@@ -170,6 +170,13 @@ img{max-width:100%;display:block}
     var(--cream) 100%);
   overflow:hidden;
 }
+/* Przywrócony delikatny botaniczny wzór (kratka listków) w tle hero —
+   ten sam motyw, co wcześniej, teraz dodatkowo powoli "dryfuje". */
+.hero::before{
+  content:'';position:absolute;inset:-120px;opacity:.13;z-index:0;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'%3E%3Cg fill='none' stroke='%23D4B483' stroke-width='1.1' opacity='.9'%3E%3Cpath d='M120 30c-18 26-18 52 0 78 18-26 18-52 0-78z'/%3E%3Cpath d='M120 108v104'/%3E%3Cpath d='M120 140c-22-6-38-22-44-44 22 6 38 22 44 44z'/%3E%3Cpath d='M120 140c22-6 38-22 44-44-22 6-38 22-44 44z'/%3E%3Cpath d='M120 186c-18-5-31-18-36-36 18 5 31 18 36 36z'/%3E%3Cpath d='M120 186c18-5 31-18 36-36-18 5-31 18-36 36z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size:240px 240px;
+}
 /* Duże, subtelne gałązki po bokach — pojedyncze obrazy (nie kafelki), więc
    nigdzie nie ma szwów ani powtarzającej się linii. */
 .hero-leaf{
@@ -453,10 +460,29 @@ footer a:hover{text-decoration:underline}
   html.js .hero-inner > *:nth-child(9){animation-delay:1.08s}
   @keyframes heroIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
 
+  /* Powolny dryf botanicznych wzorów — w hero i na całej stronie */
+  .hero::before{animation:drift 50s linear infinite}
+  .leaves-bg{animation:driftSlow 90s linear infinite}
+  @keyframes drift{from{background-position:0 0}to{background-position:240px 240px}}
+  @keyframes driftSlow{from{background-position:0 0}to{background-position:-220px 220px}}
+
   /* Odsłanianie treści przy przewijaniu (klasy dokłada skrypt na dole strony) */
   .reveal{opacity:0;transform:translateY(28px);
     transition:opacity .7s ease, transform .75s cubic-bezier(.22,.61,.36,1)}
   .reveal.is-visible{opacity:1;transform:none}
+}
+
+/* ---------- BOTANICZNY WZÓR NA CAŁEJ STRONIE ----------
+   Ten sam motyw listków co w hero, ale rozciągnięty na całą stronę.
+   Tryb mieszania "multiply" sprawia, że na jasnych (kremowych) sekcjach
+   wzór jest delikatnie widoczny, a na ciemnych (stopka, formularz) prawie
+   znika — więc nigdzie nie wygląda na "naklejony" ani nie przeszkadza
+   w czytaniu tekstu. */
+.leaves-bg{
+  position:fixed;inset:0;z-index:5;pointer-events:none;
+  opacity:.16;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Cg fill='none' stroke='%232C4A3B' stroke-width='1'%3E%3Cpath d='M110 26c-16 24-16 47 0 71 16-24 16-47 0-71z'/%3E%3Cpath d='M110 97v96'/%3E%3Cpath d='M110 127c-20-5-35-20-40-40 20 5 35 20 40 40z'/%3E%3Cpath d='M110 127c20-5 35-20 40-40-20 5-35 20-40 40z'/%3E%3Cpath d='M110 170c-16-4-28-16-32-32 16 4 28 16 32 32z'/%3E%3Cpath d='M110 170c16-4 28-16 32-32-16 4-28 16-32 32z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size:220px 220px;
 }
 
 /* ---------- MODAL POLITYKI ---------- */
@@ -481,6 +507,9 @@ footer a:hover{text-decoration:underline}
 </style>
 </head>
 <body>
+
+<!-- Botaniczny wzór widoczny na całej stronie, nie tylko w hero -->
+<div class="leaves-bg" aria-hidden="true"></div>
 
 <!-- ================= HERO ================= -->
 <header class="hero">
