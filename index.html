@@ -351,8 +351,16 @@ h2{font-size:clamp(30px,6vw,44px);margin-bottom:16px}
 /* ---------- FORMULARZ ---------- */
 .form-sec{
   background:linear-gradient(165deg,#2C4A3B,#1E3529);
-  color:#fff;position:relative;
+  color:#fff;position:relative;overflow:hidden;
 }
+/* Ten sam botaniczny wzór co w hero (w złocie, żeby było widać na ciemnym
+   tle) — dla spójności motywu na całej stronie, nie tylko w hero. */
+.form-sec::before{
+  content:'';position:absolute;inset:-120px;z-index:0;opacity:.1;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'%3E%3Cg fill='none' stroke='%23D4B483' stroke-width='1.1' opacity='.9'%3E%3Cpath d='M120 30c-18 26-18 52 0 78 18-26 18-52 0-78z'/%3E%3Cpath d='M120 108v104'/%3E%3Cpath d='M120 140c-22-6-38-22-44-44 22 6 38 22 44 44z'/%3E%3Cpath d='M120 140c22-6 38-22 44-44-22 6-38 22-44 44z'/%3E%3Cpath d='M120 186c-18-5-31-18-36-36 18 5 31 18 36 36z'/%3E%3Cpath d='M120 186c18-5 31-18 36-36-18 5-31 18-36 36z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size:240px 240px;
+}
+.form-sec>.wrap{position:relative;z-index:1}
 .form-sec .sec-label{color:var(--gold-light)}
 .form-sec h2{color:#fff}
 .form-sec .sec-head p{color:rgba(255,255,255,.75)}
@@ -416,7 +424,13 @@ input.err{border-color:#E8836F;box-shadow:0 0 0 3px rgba(232,131,111,.25)}
 .faq-a p{padding:0 0 26px;color:var(--muted);font-size:15.5px;max-width:640px}
 
 /* ---------- STOPKA ---------- */
-footer{background:#1E3529;color:rgba(255,255,255,.6);padding:56px 0 40px;text-align:center;font-size:14px}
+footer{background:#1E3529;color:rgba(255,255,255,.6);padding:56px 0 40px;text-align:center;font-size:14px;position:relative;overflow:hidden}
+footer::before{
+  content:'';position:absolute;inset:-120px;z-index:0;opacity:.09;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'%3E%3Cg fill='none' stroke='%23D4B483' stroke-width='1.1' opacity='.9'%3E%3Cpath d='M120 30c-18 26-18 52 0 78 18-26 18-52 0-78z'/%3E%3Cpath d='M120 108v104'/%3E%3Cpath d='M120 140c-22-6-38-22-44-44 22 6 38 22 44 44z'/%3E%3Cpath d='M120 140c22-6 38-22 44-44-22 6-38 22-44 44z'/%3E%3Cpath d='M120 186c-18-5-31-18-36-36 18 5 31 18 36 36z'/%3E%3Cpath d='M120 186c18-5 31-18 36-36-18 5-31 18-36 36z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size:240px 240px;
+}
+footer .wrap{position:relative;z-index:1}
 footer .brand{font-size:22px;margin-bottom:18px;color:rgba(255,255,255,.9)}
 footer a{color:var(--gold-light);text-decoration:none}
 footer a:hover{text-decoration:underline}
@@ -461,7 +475,7 @@ footer a:hover{text-decoration:underline}
   @keyframes heroIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
 
   /* Powolny dryf botanicznych wzorów — w hero i na całej stronie */
-  .hero::before{animation:drift 50s linear infinite}
+  .hero::before,.form-sec::before,footer::before{animation:drift 50s linear infinite}
   .leaves-bg{animation:driftSlow 90s linear infinite}
   @keyframes drift{from{background-position:0 0}to{background-position:240px 240px}}
   @keyframes driftSlow{from{background-position:0 0}to{background-position:-220px 220px}}
