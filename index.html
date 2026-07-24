@@ -164,13 +164,9 @@ img{max-width:100%;display:block}
   background:linear-gradient(180deg,#3D6350 0%,#2C4A3B 52%,#1E3529 100%);
   overflow:hidden;
 }
-/* Przywrócony delikatny botaniczny wzór (kratka listków) w tle hero —
-   ten sam motyw, co wcześniej, teraz dodatkowo powoli "dryfuje". */
-.hero::before{
-  content:'';position:absolute;inset:-120px;opacity:.13;z-index:0;pointer-events:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'%3E%3Cg fill='none' stroke='%23D4B483' stroke-width='1.1' opacity='.9'%3E%3Cpath d='M120 30c-18 26-18 52 0 78 18-26 18-52 0-78z'/%3E%3Cpath d='M120 108v104'/%3E%3Cpath d='M120 140c-22-6-38-22-44-44 22 6 38 22 44 44z'/%3E%3Cpath d='M120 140c22-6 38-22 44-44-22 6-38 22-44 44z'/%3E%3Cpath d='M120 186c-18-5-31-18-36-36 18 5 31 18 36 36z'/%3E%3Cpath d='M120 186c18-5 31-18 36-36-18 5-31 18-36 36z'/%3E%3C/g%3E%3C/svg%3E");
-  background-size:240px 240px;
-}
+/* W hero zostają TYLKO duże boczne gałązki. Drobny kafelkowy wzór został tu
+   usunięty, bo nakładał się na te gałązki. Na pozostałych sekcjach drobny
+   wzór (.leaves-bg) działa dalej bez zmian. */
 /* Duże, subtelne gałązki po bokach — pojedyncze obrazy (nie kafelki), więc
    nigdzie nie ma szwów ani powtarzającej się linii. */
 .hero-leaf{
